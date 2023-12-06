@@ -18,7 +18,7 @@ class Environment:
         self.environment_type = config["environment_type"] if "environment_type" in config else "cooperative"
         self.current_chat_history_idx = 0
         self.LLMs = {}
-        
+
         # 初始化每个state 的summary 方法
         # Initialize the summary method for each state
         for state_name, state_dict in config["states"].items():
@@ -40,7 +40,9 @@ class Environment:
                     if "environment_prompt" in state_dict
                     else " "
                 )
-                self.LLMs[state_name] = init_LLM("logs"+os.sep+f"{state_name}",**state_dict)
+                self.LLMs[state_name] = init_LLM(
+                    f"logs{os.sep}" + f"{state_name}", **state_dict
+                )
         self.roles_to_names = None
         self.names_to_roles = None
 
@@ -72,17 +74,18 @@ class Environment:
             self.shared_memory["long_term_memory"][-MAX_CHAT_HISTORY + 1 :]
         )
         summary = self.shared_memory["short_term_memory"]
-        
-        
+
+
         # system prompt = environment prompt + current memory + system prompt
         # current_memory = summary + chat history + relevant history
         current_memory = eval(Environment_summary_memory)
         environment_prompt = self.environment_prompt[current_state_name]
         summary_system_prompt = self.summary_system_prompt[current_state_name]
-        
+
         environment_summary_system_prompt = eval(Environment_summary_system_prompt)
-        response = self.LLMs[current_state_name].get_response(None, environment_summary_system_prompt, stream=False)
-        return response
+        return self.LLMs[current_state_name].get_response(
+            None, environment_summary_system_prompt, stream=False
+        )
 
     def update_memory(self, memory, current_state):
         """

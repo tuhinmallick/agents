@@ -81,13 +81,8 @@ class KnowledgeBaseComponent(ToolComponent):
         if self.type == "QA":
             for hit in hits:
                 matching_idx = hit["corpus_id"]
-                if self.kb_chunks[matching_idx] in temp:
-                    pass
-                else:
-                    knowledge = (
-                        knowledge
-                        + f"question:{self.kb_questions[matching_idx]},answer:{self.kb_answers[matching_idx]}\n\n"
-                    )
+                if self.kb_chunks[matching_idx] not in temp:
+                    knowledge = f"{knowledge}question:{self.kb_questions[matching_idx]},answer:{self.kb_answers[matching_idx]}\n\n"
                     temp.append(self.kb_answers[matching_idx])
                     if len(temp) == 1:
                         break
@@ -96,14 +91,12 @@ class KnowledgeBaseComponent(ToolComponent):
             if score < 0.75:
                 return {"prompt": "No matching knowledge base"}
             else:
-                return {"prompt": "The relevant content is: " + knowledge + "\n"}
+                return {"prompt": f"The relevant content is: {knowledge}" + "\n"}
         else:
             for hit in hits:
                 matching_idx = hit["corpus_id"]
-                if self.kb_chunks[matching_idx] in temp:
-                    pass
-                else:
-                    knowledge = knowledge + f"{self.kb_chunks[matching_idx]}\n\n"
+                if self.kb_chunks[matching_idx] not in temp:
+                    knowledge = f"{knowledge}{self.kb_chunks[matching_idx]}\n\n"
                     temp.append(self.kb_chunks[matching_idx])
                     if len(temp) == self.top_k:
                         break
@@ -111,9 +104,8 @@ class KnowledgeBaseComponent(ToolComponent):
             score = hits[0]["score"]
             if score < 0.5:
                 return {"prompt": "No matching knowledge base"}
-            else:
-                print(knowledge)
-                return {"prompt": "The relevant content is: " + knowledge + "\n"}
+            print(knowledge)
+            return {"prompt": f"The relevant content is: {knowledge}" + "\n"}
 
 
 class StaticComponent(ToolComponent):
@@ -123,8 +115,7 @@ class StaticComponent(ToolComponent):
         self.output = output
 
     def func(self, agent):
-        outputdict = {"response": self.output}
-        return outputdict
+        return {"response": self.output}
 
 
 class ExtractComponent(ToolComponent):
@@ -269,12 +260,14 @@ class WebSearchComponent(ToolComponent):
             elif "snippet_highlighted_words" in answer_box.keys():
                 snippets.append(answer_box["snippet_highlighted_words"])
             else:
-                answer = {}
-                for key, value in answer_box.items():
-                    if not isinstance(value, (list, dict)) and not (
-                        isinstance(value, str) and value.startswith("http")
-                    ):
-                        answer[key] = value
+                answer = {
+                    key: value
+                    for key, value in answer_box.items()
+                    if not isinstance(value, (list, dict))
+                    and (
+                        not isinstance(value, str) or not value.startswith("http")
+                    )
+                }
                 snippets.append(str(answer))
         elif "events_results" in results.keys():
             snippets.append(results["events_results"][:10])
@@ -311,7 +304,9 @@ class WebSearchComponent(ToolComponent):
                 title = knowledge_graph["title"] if "title" in knowledge_graph else ""
                 if "description" in knowledge_graph.keys():
                     snippets.append(knowledge_graph["description"])
-                for key, value in knowledge_graph.items():
+                snippets.extend(
+                    f"{title} {key}: {value}."
+                    for key, value in knowledge_graph.items()
                     if (
                         isinstance(key, str)
                         and isinstance(value, str)
@@ -319,8 +314,8 @@ class WebSearchComponent(ToolComponent):
                         and not key.endswith("_stick")
                         and not key.endswith("_link")
                         and not value.startswith("http")
-                    ):
-                        snippets.append(f"{title} {key}: {value}.")
+                    )
+                )
             if "organic_results" in results.keys():
                 first_organic_result = results["organic_results"][0]
                 if "snippet" in first_organic_result.keys():
@@ -356,9 +351,7 @@ class WebSearchComponent(ToolComponent):
         query = response if response else query
 
         search_results = self.search[self.engine_name](query=query, **kwargs)
-        information = ""
-        for i in search_results["meta data"][:5]:
-            information += i["snippet"]
+        information = "".join(i["snippet"] for i in search_results["meta data"][:5])
         return {
             "prompt": "You can refer to the following information to reply:\n"
             + information
@@ -514,10 +507,7 @@ class MailComponent(ToolComponent):
             return query.strip()
 
         def sort_by_time(data: List[Dict]):
-            if order_by_time == "descend":
-                reverse = True
-            else:
-                reverse = False
+            reverse = order_by_time == "descend"
             sorted_data = sorted(
                 data,
                 key=lambda x: datetime.strptime(x["time"], "%Y-%m-%d %H:%M:%S"),
@@ -535,7 +525,7 @@ class MailComponent(ToolComponent):
             )
 
             messages = results.get("messages", [])
-            email_data = list()
+            email_data = []
 
             if not messages:
                 print("No eligible emails.")
@@ -589,7 +579,7 @@ class MailComponent(ToolComponent):
                     }
                     email_data.append(email_info)
                 pbar.close()
-            email_data = sort_by_time(email_data)[0:number]
+            email_data = sort_by_time(email_data)[:number]
             return {"results": email_data}
         except Exception as e:
             print(e)
@@ -859,9 +849,6 @@ class TranslateComponent(ToolComponent):
 
         endpoint = "https://api.cognitive.microsofttranslator.com"
 
-        path = "/translate"
-        constructed_url = endpoint + path
-
         params = {"api-version": "3.0", "to": target_language}
 
         headers = {
@@ -873,6 +860,7 @@ class TranslateComponent(ToolComponent):
 
         body = [{"text": content}]
 
+        constructed_url = f"{endpoint}/translate"
         request = requests.post(
             constructed_url, params=params, headers=headers, json=body
         )
@@ -944,15 +932,16 @@ class FunctionComponent(ToolComponent):
             function_name = response_message["function_call"]["name"]
             fuction_to_call = self.available_functions[function_name]
             function_args = json.loads(response_message["function_call"]["arguments"])
-            input_args = {}
-            for args_name in self.parameters[function_name]:
-                input_args[args_name] = function_args.get(args_name)
+            input_args = {
+                args_name: function_args.get(args_name)
+                for args_name in self.parameters[function_name]
+            }
             function_response = fuction_to_call(**input_args)
-            if self.response_type == "response":
-                outputdict["response"] = function_response
-            elif self.response_type == "prompt":
+            if self.response_type == "prompt":
                 outputdict["prompt"] = function_response
 
+            elif self.response_type == "response":
+                outputdict["response"] = function_response
         return outputdict
 
 
@@ -981,7 +970,7 @@ class CodeComponent(ToolComponent):
         code = extract(response, self.keyword)
         code = code if code else response
         os.makedirs("output_code", exist_ok=True)
-        file_name = "output_code/" + self.file_name
+        file_name = f"output_code/{self.file_name}"
         codes = code.split("\n")
         if codes[0] == "```python":
             codes.remove(codes[0])
@@ -1031,15 +1020,14 @@ class FlightComponent(ToolComponent):
         :return: Flight price information or an error message.
         """
         headers = {'Authorization': f'Bearer {self.token}'}
-        url = "https://test.api.amadeus.com/v2/shopping/flight-offers" 
+        url = "https://test.api.amadeus.com/v2/shopping/flight-offers"
         response = requests.get(url, headers=headers, params=search_params)
         if response.status_code == 200:
             return response.json()
-        else:
-            try:
-                return {"error": "Unable to fetch flight data", "detail": response.json()["detail"]}
-            except:
-                return {"error": "Invalid inputs"}
+        try:
+            return {"error": "Unable to fetch flight data", "detail": response.json()["detail"]}
+        except:
+            return {"error": "Invalid inputs"}
 
     def _parse_flight_data(self, flight_data):
         information = f"There are {len(flight_data['data'])} flights available. Here are their information. "
@@ -1076,11 +1064,11 @@ class FlightComponent(ToolComponent):
         :return: Dictionary with flight price data or error message.
         """
 
-        query = ""
-        for i in range(3, 0, -1): # get last 3 queries
-            if len(agent.long_term_memory) >= i:
-                query += agent.long_term_memory[len(agent.long_term_memory) - i]["content"]
-
+        query = "".join(
+            agent.long_term_memory[len(agent.long_term_memory) - i]["content"]
+            for i in range(3, 0, -1)
+            if len(agent.long_term_memory) >= i
+        )
         response = agent.LLM.get_response(
             None,
             system_prompt=f'''Please analyze the provided conversation and identify keywords that could be used to make a flight booking using the Amadeus API.
@@ -1151,8 +1139,10 @@ class FlightComponent(ToolComponent):
 
         if "error" in flight_data:
             try:
-                return_dict = {"prompt": "You can refer to the following information to reply:\n There is an error with the query, you should clarify about " + flight_data["detail"]}
-                return return_dict
+                return {
+                    "prompt": "You can refer to the following information to reply:\n There is an error with the query, you should clarify about "
+                    + flight_data["detail"]
+                }
             except:
                 return {"prompt": flight_data["error"]}
 

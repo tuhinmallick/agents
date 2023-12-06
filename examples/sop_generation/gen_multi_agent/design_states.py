@@ -52,10 +52,11 @@ def get_desgin_states(target,index):
 
 def gen_agent_style(agents,design_states,index):
     agents_styles = {}
-    scene = ""
     design_agents_style_system_prompt = get_design_agents_style_system_prompt(index)
-    for design_state in design_states:
-        scene +=design_state["environment_prompt"] + "\n"
+    scene = "".join(
+        design_state["environment_prompt"] + "\n"
+        for design_state in design_states
+    )
     for agent in agents:
         chat_history = [{"role":"user","content":f"<scene>{scene}</scene>,<target>{agent}</target>"}]
         style = llm.get_response(chat_history,design_agents_style_system_prompt)
@@ -67,17 +68,18 @@ def gen_agent_style(agents,design_states,index):
 
 def gen_agent_state(agent,environment_prompt,index):
     design_agent_state_system_prompt = get_design_agent_state_system_prompt(index)
-    agent_state = {}
     chat_history = [{"role":"user","content":f"<scene>{environment_prompt}</scene>,<target>{agent}</target>"}]
     response = llm.get_response(chat_history,design_agent_state_system_prompt)
     role = extract(response,"role")
     task = extract(response,"task")
     rule = extract(response,"rule")
     demonstrations = extract(response,"demonstrations")
-    agent_state["style"] = {"role":role}
-    agent_state["task"] = {"task":task}
-    agent_state["rule"] = {"rule":rule}
-    agent_state["demonstrations"] = {"demonstrations":demonstrations}
+    agent_state = {
+        "style": {"role": role},
+        "task": {"task": task},
+        "rule": {"rule": rule},
+        "demonstrations": {"demonstrations": demonstrations},
+    }
     print(agent_state)
     return agent_state
 

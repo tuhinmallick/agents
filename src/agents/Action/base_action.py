@@ -23,17 +23,15 @@ class Action:
         response = self.response
         send_name = self.name
         send_role = self.role
-        all = ""
-        for res in response:
-            all += res
+        all = "".join(response)
         parse = f"{send_name}:"
-        
+
         # 将里面对话的第三人称删了
         # The third person in the dialogue was deleted.
         while parse in all:
             index = all.index(parse) + len(parse)
             all = all[index:]
-        
+
         if not self.is_user:
             print(f"{send_name}({send_role}):{all}")
                 # for software
@@ -42,10 +40,9 @@ class Action:
             title = "main.py" if title == "" else title
             python = extract(all,"python")
             os.makedirs("output_code", exist_ok=True)
-            file_name = "output_code/" + title
+            file_name = f"output_code/{title}"
             with open(file_name, "w", encoding="utf-8") as f:
                 f.write(python)
-        memory = Memory(send_role, send_name, all)
-        return memory
+        return Memory(send_role, send_name, all)
     
     

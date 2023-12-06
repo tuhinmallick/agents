@@ -1,5 +1,29 @@
 def get_design_state_system_prompt(index):
-    software = """input:<target>You are a software,aim to write a snake game with python</target>
+    ecosystem = """input:
+<target>Simulate the interactions and competition among different organisms within an ecosystem.</target>
+output:
+<state>
+<state_name>Forest Morning</state_name>
+<roles>Squirrel_A Sammy Ant_Colony Queen_Penelope Heron_Henry Rabbit_Family Matriarch_Olivia Fox_Felix</roles>
+<describe>In this state, we are introduced to the lush and vibrant forest, where various organisms coexist. Sammy, the playful squirrel, gathers acorns. Queen Penelope leads the diligent ant colony in collecting food. Heron Henry patiently waits for the perfect moment to catch his prey. Matriarch Olivia ensures the safety of her rabbit family. Fox Felix competes with Sammy for a ripe berry bush.
+</describe>
+</state>
+<state>
+<state_name>Competition for Resources</state_name>
+<roles>Squirrel_A Sammy Fox_Felix Ant_Colony Queen_Penelope Beetles Heron_Henry Otter_Oliver</roles>
+<describe>In this state, the competition for resources becomes apparent. Sammy and Felix compete for the ripe berry bush. The ant colony, led by Queen Penelope, battles with persistent beetles for control of a fallen fruit source. Heron Henry catches a fish, but otter Oliver tries to snatch it away.
+</describe>
+</state>
+<state>
+<state_name>Delicate Balance</state_name>
+<roles>Squirrel_A Sammy Ant_Colony Queen_Penelope Heron_Henry Rabbit_Family Matriarch_Olivia Fox_Felix Beetles Otter_Oliver</roles>
+<describe>In this state, the delicate balance of life in the forest is emphasized. Each organism plays its unique role in the ecosystem. Sammy, Queen Penelope, Heron Henry, Matriarch Olivia, Fox Felix, Beetles, and Otter Oliver continue to interact and compete, shaping the intricate dance of survival and coexistence.
+</describe>
+</state>"""
+
+
+    if index == 0:
+        software = """input:<target>You are a software,aim to write a snake game with python</target>
 output:
 <state>
  <state_name>design_state</state_name>
@@ -21,7 +45,11 @@ output:
 <describe>In this scenario, the boss has provided a requirement. The debugger simulates a compiler to determine whether the code is runnable and provides feedback. The developer writes code based on the debugger's feedback. The leader evaluates whether the final code meets the boss's requirements and provides feedback for further modifications. The coder writes the final code to a file.The target game <game>a snake game with python</game></target>
 </describe>
 </state>"""
-    debate = """input:<target>Simulate a debate competition and debate based on the provided questions</target>
+        example = software
+    elif index == 2:
+        example = ecosystem
+    else:
+        debate = """input:<target>Simulate a debate competition and debate based on the provided questions</target>
 output:
 <state>
  <state_name>Affirmative_Task_Allocation_state</state_name>
@@ -58,38 +86,8 @@ output:
 </describe>
 </state>"""     
 
-    ecosystem = """input:
-<target>Simulate the interactions and competition among different organisms within an ecosystem.</target>
-output:
-<state>
-<state_name>Forest Morning</state_name>
-<roles>Squirrel_A Sammy Ant_Colony Queen_Penelope Heron_Henry Rabbit_Family Matriarch_Olivia Fox_Felix</roles>
-<describe>In this state, we are introduced to the lush and vibrant forest, where various organisms coexist. Sammy, the playful squirrel, gathers acorns. Queen Penelope leads the diligent ant colony in collecting food. Heron Henry patiently waits for the perfect moment to catch his prey. Matriarch Olivia ensures the safety of her rabbit family. Fox Felix competes with Sammy for a ripe berry bush.
-</describe>
-</state>
-<state>
-<state_name>Competition for Resources</state_name>
-<roles>Squirrel_A Sammy Fox_Felix Ant_Colony Queen_Penelope Beetles Heron_Henry Otter_Oliver</roles>
-<describe>In this state, the competition for resources becomes apparent. Sammy and Felix compete for the ripe berry bush. The ant colony, led by Queen Penelope, battles with persistent beetles for control of a fallen fruit source. Heron Henry catches a fish, but otter Oliver tries to snatch it away.
-</describe>
-</state>
-<state>
-<state_name>Delicate Balance</state_name>
-<roles>Squirrel_A Sammy Ant_Colony Queen_Penelope Heron_Henry Rabbit_Family Matriarch_Olivia Fox_Felix Beetles Otter_Oliver</roles>
-<describe>In this state, the delicate balance of life in the forest is emphasized. Each organism plays its unique role in the ecosystem. Sammy, Queen Penelope, Heron Henry, Matriarch Olivia, Fox Felix, Beetles, and Otter Oliver continue to interact and compete, shaping the intricate dance of survival and coexistence.
-</describe>
-</state>"""
-    
-    
-    if index == 0:
-        example = software
-    elif index == 1:
         example = debate
-    elif index == 2 :
-        example = ecosystem
-    else:
-        example = debate
-    
+
     return """You are a scene description master. You need to plan several different states based on the overall task given to you to complete the task progressively. You must ensure that each state is simple and clear enough. 
 input:<target>{{Task}}</target>
 output:
@@ -113,18 +111,6 @@ Note:
 
 
 def get_design_agents_style_system_prompt(index):
-    software = """input: 
-<scene>In this scenario, the boss has provided a requirement. The debugger simulates a compiler to determine whether the code is runnable and provides feedback. The developer writes code based on the debugger's feedback. The leader evaluates whether the final code meets the boss's requirements and provides feedback for further modifications. The coder writes the final code to a file.The target program <target>a snake game with python</target></scene>
-<target>Debugger<target>
-output: 
-<style>professional</style>"""
-
-    debate = """input:
-<scene>It is currently the debate stage, where the positive side is assigning tasks.Affirmative debaters gather to assign tasks, meticulously plan their speeches, and identify key arguments and evidence to support their viewpoint.</scene>
-<target>Affirmative_First</target>
-output:
-<style>professional</style>"""
-
     ecosystem = """input:
 <scene>In this state, we are introduced to the lush and vibrant forest, where various organisms coexist. Sammy, the playful squirrel, gathers acorns. Queen Penelope leads the diligent ant colony in collecting food. Heron Henry patiently waits for the perfect moment to catch his prey. Matriarch Olivia ensures the safety of her rabbit family. Fox Felix competes with Sammy for a ripe berry bush.</scene>
 <target>Sammy</target>
@@ -134,14 +120,24 @@ output:
 
 
     if index == 0:
+        software = """input: 
+<scene>In this scenario, the boss has provided a requirement. The debugger simulates a compiler to determine whether the code is runnable and provides feedback. The developer writes code based on the debugger's feedback. The leader evaluates whether the final code meets the boss's requirements and provides feedback for further modifications. The coder writes the final code to a file.The target program <target>a snake game with python</target></scene>
+<target>Debugger<target>
+output: 
+<style>professional</style>"""
+
         example = software
-    elif index == 1 :
-        example = debate
-    elif index == 2 :
+    elif index == 2:
         example = ecosystem
     else:
+        debate = """input:
+<scene>It is currently the debate stage, where the positive side is assigning tasks.Affirmative debaters gather to assign tasks, meticulously plan their speeches, and identify key arguments and evidence to support their viewpoint.</scene>
+<target>Affirmative_First</target>
+output:
+<style>professional</style>"""
+
         example = debate
-        
+
     return """Please output what personality you think the following characters should have and what style they should speak. 
 For example: 
 input: 
@@ -150,7 +146,18 @@ please strictly follow the output format:<style>{{your output}}</style>""".forma
 
 
 def get_design_agent_state_system_prompt(index):
-    software = """input:
+    ecosystem = """input:
+<scene>In this state, we are introduced to the lush and vibrant forest, where various organisms coexist. Sammy, the playful squirrel, gathers acorns. Queen Penelope leads the diligent ant colony in collecting food. Heron Henry patiently waits for the perfect moment to catch his prey. Matriarch Olivia ensures the safety of her rabbit family. Fox Felix competes with Sammy for a ripe berry bush.</scene>
+<target>Queen_Penelope</target>
+output:
+<role>Leader of the ant colony responsible for collecting food</role>
+<task>Lead the diligent ant colony in collecting food</task>
+<rule>1. Organize and coordinate the ant colony to efficiently gather food.\n2. Assign specific tasks to different groups of ants, such as foraging, carrying, and storing food.\n3. Ensure that the ants follow the most efficient paths to food sources and back to the colony.\n4. Implement effective communication methods to relay information and instructions to the ant colony.\n5. Prioritize the collection of essential food items and distribute tasks accordingly.\n6. Monitor the progress and productivity of the ant colony and make adjustments as necessary.</rule>
+<demonstrations>Example: Organizing Food Collection\n1. Assign a group of ants to scout for food sources in the surrounding area.\n2. Once a food source is found, communicate the location and type of food to the rest of the ant colony.\n3. Divide the remaining ants into foraging and carrying groups.\n4. Foraging ants collect food from the source and bring it back to the colony.\n5. Carrying ants transport the collected food to the storage area within the colony.\n6. Regularly assess the food supply and adjust the number of ants assigned to each task based on the colony's needs.</demonstrations>
+    """
+
+    if index == 0:
+        software = """input:
     <scene>In this scenario, the boss has provided a requirement. The debugger simulates a compiler to determine whether the code is runnable and provides feedback. The developer writes code based on the debugger's feedback. The leader evaluates whether the final code meets the boss's requirements and provides feedback for further modifications. The coder writes the final code to a file.The target program <target>a snake game with python</target></scene>
 <target>Developer_1</target>
 output:
@@ -161,7 +168,11 @@ output:
 Issue: The code encounters a null reference exception, causing it to crash.
 Debugging: By utilizing a debugger, we can pinpoint the exact line of code where the null reference exception occurs. We then analyze the code to identify the object or variable that is null when it shouldn't be. Once identified, we can rectify the issue, either by ensuring proper initialization or by adding null-checks to handle the situation gracefully, preventing the crash.</demonstrations>"""
 
-    debate = """input:
+        example = software
+    elif index == 2:
+        example = ecosystem
+    else:
+        debate = """input:
 <scene>It is currently the debate stage, where the positive side is assigning tasks.Affirmative debaters gather to assign tasks, meticulously plan their speeches, and identify key arguments and evidence to support their viewpoint.</scene>
 <target>Affirmative_First</target>
 output:
@@ -172,23 +183,6 @@ output:
 In this role as the Affirmative First, the speaker can open their argument by sharing a compelling quote or a relevant, attention-grabbing fact related to the debate topic. For instance, if the debate topic is about the urgency of addressing climate change, they could start with a quote from a renowned climate scientist or a startling statistic about the rising global temperatures. This approach not only captures the audience's interest but also immediately establishes the significance of the issue at hand, setting the stage for a persuasive argument.</demonstrations>
 """
 
-    ecosystem = """input:
-<scene>In this state, we are introduced to the lush and vibrant forest, where various organisms coexist. Sammy, the playful squirrel, gathers acorns. Queen Penelope leads the diligent ant colony in collecting food. Heron Henry patiently waits for the perfect moment to catch his prey. Matriarch Olivia ensures the safety of her rabbit family. Fox Felix competes with Sammy for a ripe berry bush.</scene>
-<target>Queen_Penelope</target>
-output:
-<role>Leader of the ant colony responsible for collecting food</role>
-<task>Lead the diligent ant colony in collecting food</task>
-<rule>1. Organize and coordinate the ant colony to efficiently gather food.\n2. Assign specific tasks to different groups of ants, such as foraging, carrying, and storing food.\n3. Ensure that the ants follow the most efficient paths to food sources and back to the colony.\n4. Implement effective communication methods to relay information and instructions to the ant colony.\n5. Prioritize the collection of essential food items and distribute tasks accordingly.\n6. Monitor the progress and productivity of the ant colony and make adjustments as necessary.</rule>
-<demonstrations>Example: Organizing Food Collection\n1. Assign a group of ants to scout for food sources in the surrounding area.\n2. Once a food source is found, communicate the location and type of food to the rest of the ant colony.\n3. Divide the remaining ants into foraging and carrying groups.\n4. Foraging ants collect food from the source and bring it back to the colony.\n5. Carrying ants transport the collected food to the storage area within the colony.\n6. Regularly assess the food supply and adjust the number of ants assigned to each task based on the colony's needs.</demonstrations>
-    """
-    
-    if index == 0:
-        example = software
-    elif index ==1 :
-        example = debate
-    elif index == 2:
-        example = ecosystem
-    else:
         example = debate
 
     return """Please analyze the task, rule and demonstration of the target character according to the scene description. The output format is:
@@ -206,33 +200,31 @@ Note:
 
 
 def get_design_begin_role_query_system_prompt(index):
-    software = """input:
-<scene>In this scenario, the boss has provided a requirement. The debugger simulates a compiler to determine whether the code is runnable and provides feedback. The developer writes code based on the debugger's feedback. The leader evaluates whether the final code meets the boss's requirements and provides feedback for further modifications. The coder writes the final code to a file.The target program <target>a snake game with python</target></scene>
-<roles>Boss Debugger Leader Devoloper</roles>
-output:
-<begin_role>Boss</begin_role>
-<begin_query>Please make the code both runnable and more efficient.</begin_query>"""
-
-    debate = """input:
-<scene>It is currently the debate stage, where the positive side is assigning tasks.Affirmative debaters gather to assign tasks, meticulously plan their speeches, and identify key arguments and evidence to support their viewpoint.<debate topic>\nShould AI Replace Humans in Creative Fields?? Affirmative viewpoint: AI should replace humans in creative fields because it can produce art and content efficiently, reduce costs, and eliminate human bias. negative viewpoint: AI should not replace humans in creative fields as it lacks true creativity, emotions, and the ability to understand complex human experiences.\n<debate topic></scene>
-<roles>Affirmative_Debate_organizer Affirmative_First Affirmative_Second Affirmative_Third</roles>
-output:
-<begin_role>Affirmative_Debate_organizer</begin_role>
-<begin_query>The debate topic is as follows: \n<debate topic>\nShould AI Replace Humans in Creative Fields?? Affirmative viewpoint: AI should replace humans in creative fields because it can produce art and content efficiently, reduce costs, and eliminate human bias. negative viewpoint: AI should not replace humans in creative fields as it lacks true creativity, emotions, and the ability to understand complex human experiences.\n<debate topic>\n, now , begin to discuss!</begin_query>"""
-    
     ecosystem = """input:
 <scene>In this state, we are introduced to the lush and vibrant forest, where various organisms coexist. Sammy, the playful squirrel, gathers acorns. Queen Penelope leads the diligent ant colony in collecting food. Heron Henry patiently waits for the perfect moment to catch his prey. Matriarch Olivia ensures the safety of her rabbit family. Fox Felix competes with Sammy for a ripe berry bush.</scene>
 <roles>Squirrel_A Sammy Ant_Colony Queen_Penelope Heron_Henry Rabbit_Family Matriarch_Olivia Fox_Felix</roles>
 output:
 <begin_role>Squirrel_A</begin_role>
 <begin_query>Look at all these delicious acorns! I can't wait to gather them all.</begin_query>"""
-    if index == 0 :
+    if index == 0:
+        software = """input:
+<scene>In this scenario, the boss has provided a requirement. The debugger simulates a compiler to determine whether the code is runnable and provides feedback. The developer writes code based on the debugger's feedback. The leader evaluates whether the final code meets the boss's requirements and provides feedback for further modifications. The coder writes the final code to a file.The target program <target>a snake game with python</target></scene>
+<roles>Boss Debugger Leader Devoloper</roles>
+output:
+<begin_role>Boss</begin_role>
+<begin_query>Please make the code both runnable and more efficient.</begin_query>"""
+
         example = software
-    elif index == 1:
-        example = debate
     elif index == 2:
         example = ecosystem
     else:
+        debate = """input:
+<scene>It is currently the debate stage, where the positive side is assigning tasks.Affirmative debaters gather to assign tasks, meticulously plan their speeches, and identify key arguments and evidence to support their viewpoint.<debate topic>\nShould AI Replace Humans in Creative Fields?? Affirmative viewpoint: AI should replace humans in creative fields because it can produce art and content efficiently, reduce costs, and eliminate human bias. negative viewpoint: AI should not replace humans in creative fields as it lacks true creativity, emotions, and the ability to understand complex human experiences.\n<debate topic></scene>
+<roles>Affirmative_Debate_organizer Affirmative_First Affirmative_Second Affirmative_Third</roles>
+output:
+<begin_role>Affirmative_Debate_organizer</begin_role>
+<begin_query>The debate topic is as follows: \n<debate topic>\nShould AI Replace Humans in Creative Fields?? Affirmative viewpoint: AI should replace humans in creative fields because it can produce art and content efficiently, reduce costs, and eliminate human bias. negative viewpoint: AI should not replace humans in creative fields as it lacks true creativity, emotions, and the ability to understand complex human experiences.\n<debate topic>\n, now , begin to discuss!</begin_query>"""
+
         example = debate      
 
     return """Please analyze which character should say the opening remarks based on the scene description and what the opening remarks are(Must be selected in the provided roles). The output format is:
