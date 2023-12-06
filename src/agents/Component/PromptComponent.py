@@ -81,8 +81,7 @@ class DemonstrationComponent(PromptComponent):
 
 
     def get_prompt(self, agent):
-        prompt = f"Here are demonstrations you can refer to:\n{self.demonstrations}"
-        return prompt
+        return f"Here are demonstrations you can refer to:\n{self.demonstrations}"
 
 
 class CoTComponent(PromptComponent):

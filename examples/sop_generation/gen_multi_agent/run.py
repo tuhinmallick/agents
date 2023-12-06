@@ -55,16 +55,12 @@ ecological_environment = "Simulate the interactions and competition among differ
 software = get_embedding(software)
 debate = get_embedding(debate)
 ecological_environment = get_embedding(ecological_environment)
-embeddings = torch.cat([software,debate,ecological_environment],dim = 0) 
+embeddings = torch.cat([software,debate,ecological_environment],dim = 0)
 target_tensor = get_embedding(target)
 sim_scores = cos_sim(target_tensor, embeddings)[0]
 top_k_score, top_k_idx = torch.topk(sim_scores,k = 1)
 
-if top_k_score > 0.7:
-    index = top_k_idx
-else:
-    index = 0
-
+index = top_k_idx if top_k_score > 0.7 else 0
 target = get_cot_result(target)
 design_states = get_desgin_states(target,index)
 root = design_states[0]["state_name"]

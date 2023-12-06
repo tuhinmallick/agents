@@ -9,13 +9,12 @@ from typing import List, Tuple, Any
 import gradio as gr
 import time
 def get_content_between_a_b(start_tag, end_tag, text):
-    extracted_text = ""
     start_index = text.find(start_tag)
+    extracted_text = ""
     while start_index != -1:
         end_index = text.find(end_tag, start_index + len(start_tag))
         if end_index != -1:
-            extracted_text += text[start_index +
-                                   len(start_tag):end_index] + " "
+            extracted_text += f"{text[start_index + len(start_tag):end_index]} "
             start_index = text.find(start_tag, end_index + len(end_tag))
         else:
             break
@@ -24,8 +23,7 @@ def get_content_between_a_b(start_tag, end_tag, text):
 
 
 def extract(text, type):
-    target_str = get_content_between_a_b(f"<{type}>", f"</{type}>", text)
-    return target_str
+    return get_content_between_a_b(f"<{type}>", f"</{type}>", text)
 
 class DebateUI(WebUI):
     FORMAT = "{}\n<debate topic>\n{}\nAffirmative viewpoint:{}\nNegative viewpoint:{}\n<debate topic>{}"
@@ -52,16 +50,15 @@ class DebateUI(WebUI):
 
     @classmethod
     def convert2list4agentname(cls, sop):
-        only_name = [] 
-        agent_name = []     
+        only_name = []
+        agent_name = []
         roles_to_names = sop.roles_to_names
         for state_name,roles_names in roles_to_names.items():
             for role,name in roles_names.items():
                 agent_name.append(f"{name}({role})")
                 only_name.append(name)
         agent_name.append(cls.AUDIENCE)
-        agent_name = list(set(agent_name))
-        agent_name.sort()
+        agent_name = sorted(set(agent_name))
         return agent_name, only_name
 
     def render_and_register_ui(self):
@@ -77,7 +74,7 @@ class DebateUI(WebUI):
     ):
         super(DebateUI, self).__init__(client_cmd, socket_host, socket_port, bufsize, ui_name)
         self.first_recieve_from_client()
-        self.data_history = list()
+        self.data_history = []
         self.caller = 0
 
     def handle_message(self, history:list,
@@ -94,8 +91,12 @@ class DebateUI(WebUI):
             self.data_history.append({agent_name: token})
         else:
             assert False, "Invalid state."
-        render_data = self.render_bubble(history, self.data_history, node_name, render_node_name= True or state % 10 == 2)
-        return render_data
+        return self.render_bubble(
+            history,
+            self.data_history,
+            node_name,
+            render_node_name=True or state % 10 == 2,
+        )
 
     def start_button_when_click(self, theme, positive, negative, choose, mode, api_key):
         """
@@ -116,7 +117,7 @@ class DebateUI(WebUI):
         """
         if self.caller == 0:
             # not single mode
-            self.data_history = list()
+            self.data_history = []
         self.caller = 0
         receive_server = self.receive_server
         while True:
@@ -129,30 +130,30 @@ class DebateUI(WebUI):
                 if state == 30:
                     # user input
                     yield history,\
-                        gr.Textbox.update(visible=True, interactive=True), \
-                        gr.Button.update(visible=True, interactive=True),\
-                        gr.Button.update(visible=True, interactive=True),\
-                        gr.Button.update(visible=False)
+                            gr.Textbox.update(visible=True, interactive=True), \
+                            gr.Button.update(visible=True, interactive=True),\
+                            gr.Button.update(visible=True, interactive=True),\
+                            gr.Button.update(visible=False)
                     return
                 elif state == 99:
                     # finish
                     yield history, gr.Textbox.update(visible=True, interactive=False, value="finish!"), \
-                        gr.Button.update(visible=True, interactive=False, value="finish!"), gr.Button.update(visible=True, interactive=True),\
-                            gr.Button.update(visible=False)
+                            gr.Button.update(visible=True, interactive=False, value="finish!"), gr.Button.update(visible=True, interactive=True),\
+                                gr.Button.update(visible=False)
                 elif state == 98:
                     yield history, \
-                          gr.Textbox.update(visible=False, interactive=False), \
-                          gr.Button.update(visible=False, interactive=False),\
-                            gr.Button.update(visible=False, interactive=False),\
-                            gr.Button.update(visible=True, value=f"Next Agent: 🤖{agent_name} | Next Node: ⭕{node_name}")
+                              gr.Textbox.update(visible=False, interactive=False), \
+                              gr.Button.update(visible=False, interactive=False),\
+                                gr.Button.update(visible=False, interactive=False),\
+                                gr.Button.update(visible=True, value=f"Next Agent: 🤖{agent_name} | Next Node: ⭕{node_name}")
                     return
                 else:
                     history = self.handle_message(history, state, agent_name, token, node_name)
                     yield history, \
-                          gr.Textbox.update(visible=False, interactive=False), \
-                          gr.Button.update(visible=False, interactive=False),\
-                            gr.Button.update(visible=False, interactive=False),\
-                                gr.Button.update(visible=False)
+                              gr.Textbox.update(visible=False, interactive=False), \
+                              gr.Button.update(visible=False, interactive=False),\
+                                gr.Button.update(visible=False, interactive=False),\
+                                    gr.Button.update(visible=False)
 
     def send_button_when_click(self, text_user, history:list):
         """
@@ -163,11 +164,11 @@ class DebateUI(WebUI):
             [UIHelper.wrap_css(text_user, "User"), None]
         )
         # print(f"server: send {text_user} to client")
-        self.send_message("<USER>"+text_user+self.SIGN["SPLIT"])
+        self.send_message(f"<USER>{text_user}" + self.SIGN["SPLIT"])
         return gr.Textbox.update(value="", visible=False),\
-              gr.Button.update(visible=False), \
-                history,\
-                    gr.Button.update(visible=False)
+                  gr.Button.update(visible=False), \
+                    history,\
+                        gr.Button.update(visible=False)
 
     def reset_button_when_click(self, history, text_positive, text_negative, text_theme, text_user, btn_send, btn_start, btn_reset):
         """

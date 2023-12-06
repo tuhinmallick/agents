@@ -37,12 +37,12 @@ class Agent:
     def __init__(self, name, agent_state_roles, **kwargs) -> None:
         self.state_roles = agent_state_roles
         self.name = name
-        
+
         self.style = kwargs["style"]
         self.LLMs = kwargs["LLMs"]
         self.LLM = None
         self.is_user = kwargs["is_user"]
-        self.begins = kwargs["begins"] if "begins" in kwargs else False
+        self.begins = kwargs.get("begins", False)
         self.current_role = ""
         self.long_term_memory = []
         self.short_term_memory = ""
@@ -62,7 +62,7 @@ class Agent:
         """
         with open(config_path) as f:
             config = json.load(f)
-        
+
         roles_to_names = {}
         names_to_roles = {}
         agents = {}
@@ -74,7 +74,7 @@ class Agent:
             for state_name, agent_role in agent_dict["roles"].items():
                 
                 agent_begins[state_name] = {}
-                
+
                 if state_name not in roles_to_names:
                     roles_to_names[state_name] = {}
                 if state_name not in names_to_roles:
@@ -91,7 +91,10 @@ class Agent:
                     current_state["agent_states"][agent_role]["LLM_type"] = config["LLM_type"]
                 if "LLM" not in current_state["agent_states"][agent_role]:
                     current_state["agent_states"][agent_role]["LLM"] = config["LLM"]
-                agent_LLMs[state_name] = init_LLM("logs"+os.sep+f"{agent_name}",**current_state["agent_states"][agent_role])
+                agent_LLMs[state_name] = init_LLM(
+                    f"logs{os.sep}" + f"{agent_name}",
+                    **current_state["agent_states"][agent_role],
+                )
             agents[agent_name] = cls(
                 agent_name,
                 agent_state_roles,
@@ -100,7 +103,7 @@ class Agent:
                 style = agent_dict["style"],
                 begins = agent_begins
             )
-        assert len(config["agents"].keys()) != 2 or (roles_to_names[config["root"]][config["states"][config["root"]]["begin_role"]] not in user_names and "begin_query"  in config["states"][config["root"]]),"In a single-agent scenario, there must be an opening statement and it must be the agent" 
+        assert len(config["agents"].keys()) != 2 or (roles_to_names[config["root"]][config["states"][config["root"]]["begin_role"]] not in user_names and "begin_query"  in config["states"][config["root"]]),"In a single-agent scenario, there must be an opening statement and it must be the agent"
         return agents, roles_to_names, names_to_roles
 
     def step(self, current_state,input=""):
@@ -114,27 +117,27 @@ class Agent:
         agent_begin = self.begins[current_state.name]["is_begin"]
         self.begins[current_state.name]["is_begin"] = False
         current_state.is_begin = False
-        environment = self.environment
-        
         self.current_state = current_state
         # 先根据当前环境更新信息
         # First update the information according to the current environment
-        
+
         response = " "
         res_dict = {}
-        
+
         if self.is_user:
             response = f"{self.name}:{input}"
         else:
+            environment = self.environment
+
             if len(environment.shared_memory["long_term_memory"])>0:
                 current_history = self.observe()
                 self.long_term_memory.append(current_history)
             if agent_begin:
-                response = (char for char in self.begins[current_state.name]["begin_query"])
+                response = iter(self.begins[current_state.name]["begin_query"])
             else:
                 response,res_dict = self.act()
-        
-        
+
+
         action_dict =  {
             "response": response,
             "res_dict": res_dict,

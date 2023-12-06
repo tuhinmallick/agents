@@ -48,23 +48,19 @@ def convert2list4agentname(sop):
         only name: [name1, name2, ...]
         agent_name: [name1(role1), name2(role2), ...]
     """
-    only_name = []  
-    agent_name = [] 
+    only_name = []
+    agent_name = []
     roles_to_names = sop.roles_to_names
     for state_name,roles_names in roles_to_names.items():
         for role,name in roles_names.items():
             agent_name.append(f"{name}({role})")
             only_name.append(name)
-    agent_name = list(set(agent_name))
-    agent_name.sort()
+    agent_name = sorted(set(agent_name))
     return agent_name, only_name
 
 def is_port_in_use(port):
     """Check if the port is available"""
-    for conn in psutil.net_connections():
-        if conn.laddr.port == port:
-            return True
-    return False
+    return any(conn.laddr.port == port for conn in psutil.net_connections())
 
 def check_port(port):
     """Determine available ports"""
@@ -151,7 +147,7 @@ class UIHelper:
 
     @classmethod
     def novel_filter(cls, content, agent_name):
-        
+
         """比如<CONTENT>...</CONTENT>，就应该输出CONTENT:..."""
         IS_RECORDER = agent_name.lower() in ["recorder", "summary"]
         if IS_RECORDER:
@@ -210,14 +206,14 @@ class UIHelper:
             mapping[f"SECTION {i}"] = f"🏷️ Chapter {i}"
         for key in mapping:
             if key in [f"CHARACTER {i}" for i in range(1, 10)] \
-                    or key in [f"SECTION {i}" for i in range(1, 10)] \
-                    :
+                        or key in [f"SECTION {i}" for i in range(1, 10)]:
                 content = content.replace(
                     START_FORMAT.format(key), CENTER_FORMAT.format(mapping[key])
                 )
             elif key in ["TOTAL NUMBER"]:
                 content = content.replace(
-                    START_FORMAT.format(key), CENTER_FORMAT.format(mapping[key]) + """<span style="color: black;">"""
+                    START_FORMAT.format(key),
+                    f"""{CENTER_FORMAT.format(mapping[key])}<span style="color: black;">""",
                 )
                 content = content.replace(
                     END_FORMAT.format(key), "</span>"
@@ -268,10 +264,7 @@ class UIHelper:
             "CodeUI": cls.code_filter,
             "GeneralUI": cls.general_filter
         }
-        if ui_name in mapping:
-            return mapping[ui_name](content, agent_name)
-        else:
-            return content
+        return mapping[ui_name](content, agent_name) if ui_name in mapping else content
 
 class Client:
     """
@@ -320,7 +313,7 @@ class Client:
 
     def send_message(self, message):
         """Send the message to the server."""
-        if isinstance(message, list) or isinstance(message, dict):
+        if isinstance(message, (list, dict)):
             message = str(message)
         assert isinstance(message, str)
         message = message + self.SIGN["SPLIT"]
@@ -570,5 +563,3 @@ class WebUI:
         self.demo.launch(share=share)
 
 
-if __name__ == '__main__':
-    pass

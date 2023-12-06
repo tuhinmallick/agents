@@ -32,7 +32,7 @@ class SOP:
 
     def __init__(self, **kwargs):
         self.controller_dict = {}
-        self.LLM = init_LLM("logs"+os.sep+"god",**kwargs)
+        self.LLM = init_LLM(f"logs{os.sep}god", **kwargs)
 
         self.states = {}
         self.init_states(kwargs["states"])
@@ -41,14 +41,10 @@ class SOP:
             if state_name != "end_state" and "controller" in states_dict:
                 self.controller_dict[state_name] = states_dict["controller"]
 
-        self.user_names = kwargs["user_names"] if "user_names" in kwargs else []
+        self.user_names = kwargs.get("user_names", [])
         self.root = self.states[kwargs["root"]]
         self.current_state = self.root
-        self.finish_state_name = (
-            kwargs["finish_state_name"]
-            if "finish_state_name" in kwargs
-            else "end_state"
-        )
+        self.finish_state_name = kwargs.get("finish_state_name", "end_state")
         self.roles_to_names = None
         self.names_to_roles = None
         self.finished = False
@@ -64,8 +60,7 @@ class SOP:
         if "PROXY" in config["config"]:
             os.environ['HTTP_PROXY'] = config["config"]["PROXY"]
             os.environ['HTTPS_PROXY'] = config["config"]["PROXY"]
-        sop = SOP(**config)
-        return sop
+        return SOP(**config)
 
     def init_states(self, states_dict):
         for state_name, state_dict in states_dict.items():
@@ -150,16 +145,14 @@ class SOP:
         """
         
         agents = kwargs["agents"]
-        
+
         # 知道进入哪一状态后开始分配角色，如果该状态下只有一个角色则直接分配给他
         # Start assigning roles after knowing which state you have entered. If there is only one role in that state, assign it directly to him.
         if len(self.current_state.roles) == 1:
             next_role = self.current_state.roles[0]
-        
-        
-        
-        # 否则controller进行分配
-        # Otherwise the controller determines
+
+
+
         else:
             relevant_history = kwargs["relevant_history"]
             controller_type = (
@@ -171,27 +164,42 @@ class SOP:
 
             # 如果是rule 控制器，则交由LLM进行分配角色
             # If  controller type is rule, it is left to LLM to assign roles.
-            if controller_type == "rule":
+            if controller_type == "order":
+                # If there is no begin role, it will be given directly to the first person.
+                if self.current_state.current_role:
+                    self.current_state.index += 1
+                    self.current_state.index %= len(self.current_state.roles)
+                    next_role = self.current_state.roles[self.current_state.index]
+                else:
+                    next_role = self.current_state.roles[0]
+            elif controller_type == "random":
+                next_role = random.choice(self.current_state.roles)
+
+            elif controller_type == "rule":
                 controller_dict = self.controller_dict[self.current_state.name]
-                
-                call_last_prompt = controller_dict["call_last_prompt"] if "call_last_prompt" in controller_dict else ""
-                
-                allocate_prompt = ""
+
                 roles = list(set(self.current_state.roles))
-                for role in roles:
-                    allocate_prompt += eval(Allocate_component)
-                    
-                call_system_prompt = controller_dict["call_system_prompt"]  if "call_system_prompt" in controller_dict else ""
-                environment_prompt = eval(Get_environment_prompt) if self.current_state.environment_prompt else ""    
+                allocate_prompt = "".join(eval(Allocate_component) for _ in roles)
+                environment_prompt = eval(Get_environment_prompt) if self.current_state.environment_prompt else ""
+                call_last_prompt = (
+                    controller_dict["call_last_prompt"]
+                    if "call_last_prompt" in controller_dict
+                    else ""
+                )
+                call_system_prompt = (
+                    controller_dict["call_system_prompt"]
+                    if "call_system_prompt" in controller_dict
+                    else ""
+                )
                 # call_system_prompt + environment + allocate_prompt 
                 call_system_prompt = eval(Call_system_prompt)
-                
+
                 query = chat_history[-1].get_query()
                 last_name = chat_history[-1].send_name
                 # last_prompt: note + last_prompt + query
                 call_last_prompt =eval(Call_last_prompt)
-                
-                
+
+
                 chat_history_message = Memory.get_chat_history(chat_history)
                 # Intermediate historical conversation records
                 chat_messages = [
@@ -201,39 +209,26 @@ class SOP:
                     }
                 ]
 
-                extract_words = controller_dict["call_extract_words"] if "call_extract_words" in controller_dict else "end"
-
                 response = self.LLM.get_response(
                     chat_messages, call_system_prompt, call_last_prompt, stream=False, **kwargs
                 )
 
+                extract_words = (
+                    controller_dict["call_extract_words"]
+                    if "call_extract_words" in controller_dict
+                    else "end"
+                )
                 # get next role
                 next_role = extract(response, extract_words)
 
-            # Speak in order
-            elif controller_type == "order":
-                # If there is no begin role, it will be given directly to the first person.
-                if not self.current_state.current_role:
-                    next_role = self.current_state.roles[0]
-                # otherwise first
-                else:
-                    self.current_state.index += 1
-                    self.current_state.index =  (self.current_state.index) % len(self.current_state.roles)
-                    next_role = self.current_state.roles[self.current_state.index]
-            # random speak
-            elif controller_type == "random":
-                next_role = random.choice(self.current_state.roles)
-            
         # 如果下一角色不在，则随机挑选一个
         # If the next character is not available, pick one at random    
         if next_role not in self.current_state.roles:
             next_role = random.choice(self.current_state.roles)
-            
+
         self.current_state.current_role = next_role 
-        
-        next_agent = agents[self.roles_to_names[self.current_state.name][next_role]]
-        
-        return next_agent
+
+        return agents[self.roles_to_names[self.current_state.name][next_role]]
     
     def next(self, environment, agents):
         """
